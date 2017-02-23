@@ -13,45 +13,54 @@
 #include "tsl2561_i2c_driver.h"
 #include "common.h"
 
-uint32 _WaitForWriteComplete(uint mode)
+uint32 _WaitForI2CComplete(uint mode)
 {
     uint32 status;
     uint32 timeout = I2C_TIMEOUT_INTERVAL;
     char statusMessage[5];
+    uint32 complete;
     
-    if(1u == mode)
+    if(WRITE_MODE == mode)
     {
-        /* Waits until master completes write transfer */
-        while (0u == (I2C_I2CMasterStatus() & I2C_I2C_MSTAT_WR_CMPLT) && (0u != timeout))
-        {
-            #if (DEBUG_UART_ENABLED == ENABLED)
-                if(0u == (timeout % DEBUG_WAIT_UPDATE_INTERVAL))
-                {
-                    UART_DEB_UartPutString("Waiting for Write Complete \r\n");
-                }
-            #endif
-            timeout--;
-        }
-        status = I2C_I2CMasterStatus();
-        sprintf(statusMessage, "%08lx", status);
-        if(I2C_I2C_MSTAT_WR_CMPLT == (I2C_I2CMasterStatus() & I2C_I2C_MSTAT_WR_CMPLT))
-        {
-            /* Write complete */
-            #if (DEBUG_UART_ENABLED == ENABLED)
-            UART_DEB_UartPutString("Write Complete, status = "); 
-            #endif
-        }
-        else
-        {
-            /* I2C timeout */
-            #if (DEBUG_UART_ENABLED == ENABLED)
-            UART_DEB_UartPutString("I2C Timeout, status = ");
-            #endif
-        }
+        complete = I2C_I2C_MSTAT_WR_CMPLT;
     }
+    else
+    {
+        complete = I2C_I2C_MSTAT_RD_CMPLT;
+    }
+    
+    /* Waits until master completes write transfer */
+    while (0u == (I2C_I2CMasterStatus() & mode) && (0u != timeout))
+    {
+        #if (DEBUG_UART_ENABLED == ENABLED)
+            if(0u == (timeout % DEBUG_WAIT_UPDATE_INTERVAL))
+            {
+                UART_DEB_UartPutString("Waiting for I2C Complete \r\n");
+            }
+        #endif
+        timeout--;
+    }
+    status = I2C_I2CMasterStatus();
+    
+    if(mode == (I2C_I2CMasterStatus() & mode))
+    {
+        /* Write complete */
+        #if (DEBUG_UART_ENABLED == ENABLED)
+            UART_DEB_UartPutString("I2C Complete, status = "); 
+        #endif
+    }
+    else
+    {
+        /* I2C timeout */
+        #if (DEBUG_UART_ENABLED == ENABLED)
+            UART_DEB_UartPutString("I2C Timeout, status = ");
+        #endif
+    }
+
     #if (DEBUG_UART_ENABLED == ENABLED)
-    UART_DEB_UartPutString(statusMessage);
-    UART_DEB_UartPutString("\n\r");
+        sprintf(statusMessage, "%08lx", status);
+        UART_DEB_UartPutString(statusMessage);
+        UART_DEB_UartPutString("\n\r");
     #endif
     
     I2C_I2CMasterClearStatus();
@@ -126,7 +135,7 @@ int main(void)
     UART_DEB_UartPutString("Disabling Sensor \r\n");
     #endif
     i2cStatus = TSL2561_WriteByte(ADDRESS_FLOAT, (COMMAND_CMD_MSK | CONTROL_REG), CONTROL_POWER_OFF);
-    i2cStatus = _WaitForWriteComplete(1);
+    i2cStatus = _WaitForI2CComplete(1);
     
     CyDelay(50);
     
@@ -135,7 +144,7 @@ int main(void)
     UART_DEB_UartPutString("Enabling Sensor \r\n");
     #endif
     i2cStatus = TSL2561_WriteByte(ADDRESS_FLOAT, (COMMAND_CMD_MSK | CONTROL_REG), CONTROL_POWER_ON);
-    i2cStatus = _WaitForWriteComplete(1);
+    i2cStatus = _WaitForI2CComplete(1);
 
     
     for(;;)
@@ -148,13 +157,13 @@ int main(void)
         #endif
         commandBuffer[0] = (COMMAND_CMD_MSK | COMMAND_WORD_MSK | DATA0LOW_REG);
         I2C_I2CMasterWriteBuf(ADDRESS_FLOAT, commandBuffer, BYTE_SIZE, I2C_I2C_MODE_COMPLETE_XFER);
-        i2cStatus = _WaitForWriteComplete(1);
+        i2cStatus = _WaitForI2CComplete(1);
         
         #if (DEBUG_UART_ENABLED == ENABLED)
         UART_DEB_UartPutString("Reading Result\r\n");
         #endif
         I2C_I2CMasterReadBuf(ADDRESS_FLOAT, dataZero, WORD_SIZE, I2C_I2C_MODE_COMPLETE_XFER);
-        i2cStatus = _WaitForReadComplete(0);
+        i2cStatus = _WaitForI2CComplete(0);
         
         resultZero = dataZero[0];
         resultZero |= (dataZero[1] << 8);
