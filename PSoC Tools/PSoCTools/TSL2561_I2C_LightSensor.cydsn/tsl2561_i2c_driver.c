@@ -16,6 +16,43 @@
 #include "tsl2561_i2c_driver.h"
 
 /*******************************************************************************
+* Function Name: Init
+****************************************************************************//**
+
+*
+*  \param address: 7-bit slave address.
+*  \param *config: Structure defining the configuration of the sensor.
+*
+* \return
+*  Error status.
+*  - Returns the error status directly from the I2C component. See the I2C 
+*    datasheet for details for I2CMasterWriteBuf().
+*******************************************************************************/
+uint32 TSL2561_Init(uint8 address, const tsl2561_config *config)
+{
+    uint32 status = TRANSFER_ERROR;
+    
+    /* Set the timing register */
+    TSL2561_WriteByte(address, (COMMAND_CMD_MSK | TIMING_REG), config->timing);
+    while (0u == (I2C_I2CMasterStatus() & I2C_I2C_MSTAT_WR_CMPLT));
+    status = I2C_I2CMasterStatus();
+    
+    /* Set the threshold low low register */
+    TSL2561_WriteByte(address, (COMMAND_CMD_MSK | THRESHLOWLOW_REG), config->threshLowLow);
+    while (0u == (I2C_I2CMasterStatus() & I2C_I2C_MSTAT_WR_CMPLT));
+    status = I2C_I2CMasterStatus();
+    
+    /* Set the threshold low high register */
+    TSL2561_WriteByte(address, (COMMAND_CMD_MSK | THRESHLOWHIGH_REG), config->threshLowHigh);
+    while (0u == (I2C_I2CMasterStatus() & I2C_I2C_MSTAT_WR_CMPLT));
+    status = I2C_I2CMasterStatus();
+    
+    I2C_I2CMasterClearStatus();
+    
+    return status;
+}
+
+/*******************************************************************************
 * Function Name: WriteByte
 ****************************************************************************//**
 

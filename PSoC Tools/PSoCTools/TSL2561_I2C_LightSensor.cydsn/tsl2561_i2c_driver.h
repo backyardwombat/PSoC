@@ -11,8 +11,20 @@
 */
 #include "project.h"
 
+typedef struct 
+{
+    uint8 timing;
+    uint8 threshLowLow;
+    uint8 threshLowHigh;
+    uint8 threshHighLow;
+    uint8 threshHighHigh;
+    uint8 interrupt;
+} tsl2561_config;
+    
 uint32 TSL2561_WriteByte(uint8 address, uint8 command, uint8 data);
 uint32 TSL2561_ReadWord(uint8 address, uint8 command, uint8 * readBuffer);
+uint32 TSL2561_Init(uint8 address, const tsl2561_config *config);
+
 
 /* Addresses based on ADDR SEL pin of the TSL2561 Light Sensor */
 #define ADDRESS_GND             (0x29)
