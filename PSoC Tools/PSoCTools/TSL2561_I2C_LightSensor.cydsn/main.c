@@ -147,8 +147,8 @@ int main(void)
         resultZero |= (dataZero[1] << 8);
         
         TSL2561_ReadWord(ADDRESS_FLOAT, (uint8) (COMMAND_CMD_MSK | COMMAND_WORD_MSK | DATA1LOW_REG), dataOne);
-        resultZero = dataZero[0];
-        resultZero |= (dataZero[1] << 8);
+        resultOne = dataOne[0];
+        resultOne |= (dataOne[1] << 8);
         
         //i2cStatus = TSL2561_ReadWord(ADDRESS_FLOAT, (COMMAND_CMD_MSK | COMMAND_WORD_MSK | DATA0LOW_REG), dataZero);
         #if (DEBUG_UART_ENABLED == ENABLED)    
