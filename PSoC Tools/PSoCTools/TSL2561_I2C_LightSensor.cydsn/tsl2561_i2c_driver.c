@@ -57,9 +57,11 @@ uint32 TSL2561_WriteByte(uint8 address, uint8 command, uint8 data)
 *******************************************************************************/
 uint32 TSL2561_ReadWord(uint8 address, uint8 command, uint8 * readBuffer)
 {
+    uint8 buffer[BYTE_COMMAND_SIZE];
     uint32 status = TRANSFER_ERROR;
     
-    status = I2C_I2CMasterWriteBuf(address, &command, BYTE_SIZE, \
+    buffer[0] = command;
+    status = I2C_I2CMasterWriteBuf(address, buffer, BYTE_SIZE, \
                             I2C_I2C_MODE_COMPLETE_XFER);
     
     /* Waits until master completes write transfer */

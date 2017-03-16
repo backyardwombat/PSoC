@@ -14,12 +14,6 @@
 uint32 TSL2561_WriteByte(uint8 address, uint8 command, uint8 data);
 uint32 TSL2561_ReadWord(uint8 address, uint8 command, uint8 * readBuffer);
 
-#define I2C_TIMEOUT_INTERVAL        (0x4000)
-#define DEBUG_WAIT_UPDATE_INTERVAL  (0x400)
-
-#define WRITE_MODE              (1)
-#define READ_MODE               (0)
-
 /* Addresses based on ADDR SEL pin of the TSL2561 Light Sensor */
 #define ADDRESS_GND             (0x29)
 #define ADDRESS_FLOAT           (0x39)

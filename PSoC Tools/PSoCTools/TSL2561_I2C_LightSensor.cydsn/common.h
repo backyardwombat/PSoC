@@ -16,6 +16,9 @@
 #define ENABLED                     (1u)
 #define DISABLED                    (0u)
 
+#define I2C_TIMEOUT_INTERVAL        (0x4000)
+#define DEBUG_WAIT_UPDATE_INTERVAL  (0x400)
+
 /***************************************
 * Conditional Compilation Parameters
 ***************************************/
