@@ -13,6 +13,8 @@
 #include "tsl2561_i2c_driver.h"
 #include "common.h"
 
+#define READ_WORD_TEST 0
+
 uint32 _WaitForWriteComplete(uint mode)
 {
     uint32 status;
@@ -108,6 +110,7 @@ int main(void)
     uint32 i2cStatus;
     uint8 dataZero[2];
     uint8 dataOne[2];
+    uint8 dataBlock[5];
     uint resultZero;
     uint resultOne;
     uint8 commandBuffer[1];
@@ -121,6 +124,7 @@ int main(void)
     
     /* Place your initialization/startup code here (e.g. MyInst_Start()) */
     I2C_Start();
+    I2C_EnableInt();    
     
     /******************* Disable the TSL2561 ************************/
     #if (DEBUG_UART_ENABLED == ENABLED)
@@ -142,15 +146,51 @@ int main(void)
     for(;;)
     {
         CyDelay(500);   //Wait 500 ms
-        TSL2561_ReadWord(ADDRESS_FLOAT, (uint8) (COMMAND_CMD_MSK | COMMAND_WORD_MSK | DATA0LOW_REG), dataZero);
+        
+        #if (READ_WORD_TEST)
+        /************ READ WORDS ***********************/
+        TSL2561_SendCmd(ADDRESS_FLOAT, (COMMAND_READ_WORD | DATA0LOW_REG));
+        
+        /* Waits until master completes write transfer */
+        while (0u == (I2C_I2CMasterStatus() & I2C_I2C_MSTAT_WR_CMPLT));
+        i2cStatus = I2C_I2CMasterStatus();
+        I2C_I2CMasterClearStatus();
+    
+        TSL2561_ReadData(ADDRESS_FLOAT, WORD_SIZE, dataZero);
         resultZero = dataZero[0];
         resultZero |= (dataZero[1] << 8);
         
-        TSL2561_ReadWord(ADDRESS_FLOAT, (uint8) (COMMAND_CMD_MSK | COMMAND_WORD_MSK | DATA1LOW_REG), dataOne);
+        TSL2561_SendCmd(ADDRESS_FLOAT, (COMMAND_READ_WORD | DATA1LOW_REG));
+        
+        /* Waits until master completes write transfer */
+        while (0u == (I2C_I2CMasterStatus() & I2C_I2C_MSTAT_WR_CMPLT));
+        i2cStatus = I2C_I2CMasterStatus();
+        I2C_I2CMasterClearStatus();
+        
+        TSL2561_ReadData(ADDRESS_FLOAT, WORD_SIZE, dataOne);
         resultOne = dataOne[0];
         resultOne |= (dataOne[1] << 8);
+        #else
+        /************ READ BLOCK ***********************/
+        TSL2561_SendCmd(ADDRESS_FLOAT, COMMAND_READ_BLOCK);
         
-        //i2cStatus = TSL2561_ReadWord(ADDRESS_FLOAT, (COMMAND_CMD_MSK | COMMAND_WORD_MSK | DATA0LOW_REG), dataZero);
+        /* Waits until master completes write transfer */
+        while (0u == (I2C_I2CMasterStatus() & I2C_I2C_MSTAT_WR_CMPLT));
+        i2cStatus = I2C_I2CMasterStatus();
+        I2C_I2CMasterClearStatus();
+        
+        TSL2561_ReadData(ADDRESS_FLOAT, BLOCK_SIZE, dataBlock);
+        
+        /* Wait until master completes read */
+        while (0u == (I2C_I2CMasterStatus() & I2C_I2C_MSTAT_RD_CMPLT));
+        i2cStatus = I2C_I2CMasterStatus();
+        
+        resultZero = dataBlock[1];
+        resultZero |= (dataBlock[2] << 8);
+        resultOne = dataBlock[3];
+        resultOne |= (dataBlock[4] << 8);
+       
+        #endif
         #if (DEBUG_UART_ENABLED == ENABLED)    
         sprintf(resultString, "%d", resultZero);
         UART_DEB_UartPutString("Data 0 : ");
