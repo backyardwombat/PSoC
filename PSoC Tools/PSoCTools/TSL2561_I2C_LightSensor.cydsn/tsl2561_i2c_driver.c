@@ -1,11 +1,11 @@
 /* ========================================
  *
- * Copyright YOUR COMPANY, THE YEAR
+ * Copyright Majellatech, 2017
  * All Rights Reserved
  * UNPUBLISHED, LICENSED SOFTWARE.
  *
  * CONFIDENTIAL AND PROPRIETARY INFORMATION
- * WHICH IS THE PROPERTY OF your company.
+ * WHICH IS THE PROPERTY OF MAJELLATECH
  *
  * ========================================
 */
@@ -16,7 +16,7 @@
 #include "tsl2561_i2c_driver.h"
 
 /*******************************************************************************
-* Function Name: Init
+* Function Name: TSL2561_Init
 ****************************************************************************//**
 *  Initialize the TSL2561 Timing, Threshold and Interrupt registers.
 *
@@ -53,7 +53,7 @@ uint32 TSL2561_Init(uint8 address, const tsl2561_config *config)
 }
 
 /*******************************************************************************
-* Function Name: WriteByte
+* Function Name: TSL2561_WriteByte
 ****************************************************************************//**
 
 *
@@ -79,7 +79,7 @@ uint32 TSL2561_WriteByte(uint8 address, uint8 command, uint8 data)
 }
 
 /*******************************************************************************
-* Function Name: SendReadCmd
+* Function Name: TSL2561_SendCmd
 ****************************************************************************//**
 
 *
@@ -105,7 +105,7 @@ uint32 TSL2561_SendCmd(uint8 address, uint8 command)
 }
 
 /*******************************************************************************
-* Function Name: ReadWord
+* Function Name: TSL2561_ReadData
 ****************************************************************************//**
 
 *
@@ -128,4 +128,37 @@ uint32 TSL2561_ReadData(uint8 address, uint32 size, uint8 * readBuffer)
     return status;
 }
 
+/*******************************************************************************
+* Function Name: TSL2561_WaitForWriteComplete
+****************************************************************************//**
+* This is a blocking function that waits for an I2C write to the sensor to
+* complete.
+*
+* \return
+*  Error status.
+*  - Returns the error status directly from the I2C component. See the I2C 
+*    datasheet for details for I2CMasterReadBuf(). Note: if the I2C times out
+*    this function returns the error mask so it will appear that every I2C
+*    error condition has been hit.
+*******************************************************************************/
+uint32 TSL2561_WaitForWriteComplete(void)
+{
+    uint32 status;
+    uint32 timeout = TSL2561_I2C_TIMEOUT_INTERVAL;
+    char statusMessage[5];
+
+    /* Waits until master completes write transfer */
+    while (0u == (I2C_I2CMasterStatus() & I2C_I2C_MSTAT_WR_CMPLT) && (0u != timeout))
+    {
+        timeout--;
+    }
+    status = I2C_I2CMasterStatus();
+    if(I2C_I2C_MSTAT_WR_CMPLT != (status & I2C_I2C_MSTAT_WR_CMPLT))
+    {
+        status = I2C_I2C_MSTAT_ERR_MASK;
+    }
+    
+    I2C_I2CMasterClearStatus();
+    return status;
+}
 /* [] END OF FILE */

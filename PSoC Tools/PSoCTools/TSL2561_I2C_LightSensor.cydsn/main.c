@@ -1,11 +1,11 @@
 /* ========================================
  *
- * Copyright YOUR COMPANY, THE YEAR
+ * Copyright Majellatech, 2017
  * All Rights Reserved
  * UNPUBLISHED, LICENSED SOFTWARE.
  *
  * CONFIDENTIAL AND PROPRIETARY INFORMATION
- * WHICH IS THE PROPERTY OF your company.
+ * WHICH IS THE PROPERTY OF MAJELLATECH
  *
  * ========================================
 */
@@ -15,106 +15,18 @@
 
 #define READ_WORD_TEST 0
 
-uint32 _WaitForWriteComplete(uint mode)
-{
-    uint32 status;
-    uint32 timeout = I2C_TIMEOUT_INTERVAL;
-    char statusMessage[5];
-    
-    if(1u == mode)
-    {
-        /* Waits until master completes write transfer */
-        while (0u == (I2C_I2CMasterStatus() & I2C_I2C_MSTAT_WR_CMPLT) && (0u != timeout))
-        {
-            #if (DEBUG_UART_ENABLED == ENABLED)
-                if(0u == (timeout % DEBUG_WAIT_UPDATE_INTERVAL))
-                {
-                    UART_DEB_UartPutString("Waiting for Write Complete \r\n");
-                }
-            #endif
-            timeout--;
-        }
-        status = I2C_I2CMasterStatus();
-        sprintf(statusMessage, "%08lx", status);
-        if(I2C_I2C_MSTAT_WR_CMPLT == (I2C_I2CMasterStatus() & I2C_I2C_MSTAT_WR_CMPLT))
-        {
-            /* Write complete */
-            #if (DEBUG_UART_ENABLED == ENABLED)
-            UART_DEB_UartPutString("Write Complete, status = "); 
-            #endif
-        }
-        else
-        {
-            /* I2C timeout */
-            #if (DEBUG_UART_ENABLED == ENABLED)
-            UART_DEB_UartPutString("I2C Timeout, status = ");
-            #endif
-        }
-    }
-    #if (DEBUG_UART_ENABLED == ENABLED)
-    UART_DEB_UartPutString(statusMessage);
-    UART_DEB_UartPutString("\n\r");
-    #endif
-    
-    I2C_I2CMasterClearStatus();
-    return status;
-}
-
-uint32 _WaitForReadComplete(uint mode)
-{
-    uint32 status;
-    uint32 timeout = I2C_TIMEOUT_INTERVAL;
-    char statusMessage[5];
-    
-    if(1u == mode)
-    {
-        /* Waits until master completes write transfer */
-        while (0u == (I2C_I2CMasterStatus() & I2C_I2C_MSTAT_RD_CMPLT) && (0u != timeout))
-        {
-            #if (DEBUG_UART_ENABLED == ENABLED)
-                if(0u == (timeout % DEBUG_WAIT_UPDATE_INTERVAL))
-                {
-                    UART_DEB_UartPutString("Waiting for Read Complete \r\n");
-                }
-            #endif
-            timeout--;
-        }
-        status = I2C_I2CMasterStatus();
-        sprintf(statusMessage, "%08lx", status);
-        if(I2C_I2C_MSTAT_RD_CMPLT == (I2C_I2CMasterStatus() & I2C_I2C_MSTAT_RD_CMPLT))
-        {
-            /* Write complete */
-            #if (DEBUG_UART_ENABLED == ENABLED)
-            UART_DEB_UartPutString("Read Complete, status = "); 
-            #endif
-        }
-        else
-        {
-            /* I2C timeout */
-            #if (DEBUG_UART_ENABLED == ENABLED)
-            UART_DEB_UartPutString("I2C Timeout, status = ");
-            #endif
-        }
-    }
-    #if (DEBUG_UART_ENABLED == ENABLED)
-    UART_DEB_UartPutString(statusMessage);
-    UART_DEB_UartPutString("\n\r");
-    #endif
-    
-    I2C_I2CMasterClearStatus();
-    return status;
-}
-
 int main(void)
 {
-    uint32 i2cStatus;
-    uint8 dataZero[2];
-    uint8 dataOne[2];
-    uint8 dataBlock[5];
+    uint32 i2cStatus;    
     uint resultZero;
     uint resultOne;
-    uint8 commandBuffer[1];
     char resultString[5];
+    #if(READ_WORD_TEST)
+        uint8 dataZero[2];
+        uint8 dataOne[2];
+    #else
+        uint8 data_block[5];
+    #endif
     
     CyGlobalIntEnable; /* Enable global interrupts. */
 
@@ -131,7 +43,7 @@ int main(void)
     UART_DEB_UartPutString("Disabling Sensor \r\n");
     #endif
     i2cStatus = TSL2561_WriteByte(ADDRESS_FLOAT, (COMMAND_CMD_MSK | CONTROL_REG), CONTROL_POWER_OFF);
-    i2cStatus = _WaitForWriteComplete(1);
+    i2cStatus = TSL2561_WaitForWriteComplete();
     
     CyDelay(50);
     
@@ -140,13 +52,14 @@ int main(void)
     UART_DEB_UartPutString("Enabling Sensor \r\n");
     #endif
     i2cStatus = TSL2561_WriteByte(ADDRESS_FLOAT, (COMMAND_CMD_MSK | CONTROL_REG), CONTROL_POWER_ON);
-    i2cStatus = _WaitForWriteComplete(1);
+    i2cStatus = TSL2561_WaitForWriteComplete();
 
     
     for(;;)
     {
-        CyDelay(500);   //Wait 500 ms
+        CyDelay(500);   //Wait 500 ms between reads
         
+        /************ READ WORD ***********************/
         #if (READ_WORD_TEST)
         /************ READ WORDS ***********************/
         TSL2561_SendCmd(ADDRESS_FLOAT, (COMMAND_READ_WORD | DATA0LOW_REG));
@@ -179,16 +92,16 @@ int main(void)
         i2cStatus = I2C_I2CMasterStatus();
         I2C_I2CMasterClearStatus();
         
-        TSL2561_ReadData(ADDRESS_FLOAT, BLOCK_SIZE, dataBlock);
+        TSL2561_ReadData(ADDRESS_FLOAT, BLOCK_SIZE, data_block);
         
         /* Wait until master completes read */
         while (0u == (I2C_I2CMasterStatus() & I2C_I2C_MSTAT_RD_CMPLT));
         i2cStatus = I2C_I2CMasterStatus();
         
-        resultZero = dataBlock[1];
-        resultZero |= (dataBlock[2] << 8);
-        resultOne = dataBlock[3];
-        resultOne |= (dataBlock[4] << 8);
+        resultZero = data_block[1];
+        resultZero |= (data_block[2] << 8);
+        resultOne = data_block[3];
+        resultOne |= (data_block[4] << 8);
        
         #endif
         #if (DEBUG_UART_ENABLED == ENABLED)    

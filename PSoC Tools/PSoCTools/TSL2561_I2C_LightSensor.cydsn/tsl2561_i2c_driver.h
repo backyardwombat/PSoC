@@ -25,10 +25,13 @@ uint32 TSL2561_WriteByte(uint8 address, uint8 command, uint8 data);
 uint32 TSL2561_SendCmd(uint8 address, uint8 command);
 uint32 TSL2561_ReadData(uint8 address, uint32 size, uint8 * readBuffer);
 uint32 TSL2561_Init(uint8 address, const tsl2561_config *config);
+uint32 TSL2561_WaitForWriteComplete(void);
+
+#define TSL2561_I2C_TIMEOUT_INTERVAL        (0x4000)
 
 /* SendCmd commands */
 #define COMMAND_CLEAR_INT       (COMMAND_CMD_MSK | COMMAND_CLEAR_INT_MSK)
-#define COMMAND_READ_BLOCK      (COMMAND_CMD_MSK | COMMAND_BLOCK_MSK | DATABLOCK_REG)
+#define COMMAND_READ_BLOCK      (COMMAND_CMD_MSK | COMMAND_BLOCK_MSK | data_block_REG)
 #define COMMAND_READ_WORD       (COMMAND_CMD_MSK | COMMAND_WORD_MSK)
 #define COMMAND_READ_BYTE       (COMMAND_CMD_MSK)
 
@@ -57,7 +60,7 @@ uint32 TSL2561_Init(uint8 address, const tsl2561_config *config);
 #define THRESHHIGHGHIGH_REG     (0x5)
 #define INTERRUPT_REG           (0x6)
 #define ID_REG                  (0xA)
-#define DATABLOCK_REG           (0xB)
+#define data_block_REG           (0xB)
 #define DATA0LOW_REG            (0xC)
 #define DATA0HIGH_REG           (0xD)
 #define DATA1LOW_REG            (0xE)
