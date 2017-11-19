@@ -1,0 +1,13 @@
+CortexM0/**
+Export/**
+Generated_Source/**
+codegentemp/**
+*.cyprj.sey
+*.cywrk.sey
+TSL2561_I2C_LightSensor-000.cywrk
+TSL2561_I2C_LightSensor.cycdx
+TSL2561_I2C_LightSensor.cyfit
+TSL2561_I2C_LightSensor.rpt
+TSL2561_I2C_LightSensor.svd
+TSL2561_I2C_LightSensor_timing.html
+
